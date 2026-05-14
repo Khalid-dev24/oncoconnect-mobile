@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from '../api/axiosConfig';
+import { useAuthStore } from '../store/authStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -147,15 +148,21 @@ export default function PaymentGateScreen({ navigation, route }) {
       );
 
       if (verifyResponse.data.success) {
-        // Save consultation window data locally
+        // Save consultation window data locally with payment verification
+        const consultationData = {
+          id: verifyResponse.data.window.id,
+          expires_at: verifyResponse.data.window.expires_at,
+          status: 'active',
+          payment_verified: true,
+        };
+        
         await AsyncStorage.setItem(
           'consultation_window',
-          JSON.stringify({
-            id: verifyResponse.data.window.id,
-            expires_at: verifyResponse.data.window.expires_at,
-            status: 'active',
-          })
+          JSON.stringify(consultationData)
         );
+        
+        // Update auth store to reflect paid consultation
+        await useAuthStore.getState().setConsultationPaid(consultationData);
 
         setPaymentModalVisible(false);
         Alert.alert(

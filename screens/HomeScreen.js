@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const { width } = Dimensions.get('window');
 
@@ -80,13 +81,26 @@ export default function HomeScreen({ navigation }) {
         cancerType: 'Breast Cancer',
       });
 
-      // Check if there's an active consultation window
+      // Check if there's an active PAID consultation window
       const windowData = await AsyncStorage.getItem('consultation_window');
       if (windowData) {
         try {
           const window = JSON.parse(windowData);
-          if (window.expires_at) {
-            setConsultationStatus(window);
+          // Only show consultation if payment has been verified
+          if (window.expires_at && window.payment_verified === true) {
+            const expiresAt = new Date(window.expires_at).getTime();
+            // Verify it hasn't expired
+            if (expiresAt > Date.now()) {
+              setConsultationStatus(window);
+            } else {
+              // Window expired, clear it
+              await AsyncStorage.removeItem('consultation_window');
+              await useAuthStore.getState().clearExpiredConsultation();
+            }
+          } else {
+            // Payment not verified, don't show consultation
+            console.warn('Consultation window found but payment not verified - ignoring');
+            await AsyncStorage.removeItem('consultation_window');
           }
         } catch (e) {
           console.error('Error parsing window data:', e);

@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '../store/authStore';
 
 const COLORS = {
   dark: '#0A1628',
@@ -43,11 +44,16 @@ export default function MessagingScreen() {
       const windowData = await AsyncStorage.getItem('consultation_window');
       if (windowData) {
         const window = JSON.parse(windowData);
+        // CRITICAL: Check that payment was verified AND window hasn't expired
         const expiresAt = new Date(window.expires_at).getTime();
-        setWindowActive(expiresAt > Date.now());
+        const isValid = window.payment_verified === true && expiresAt > Date.now();
+        setWindowActive(isValid);
+      } else {
+        setWindowActive(false);
       }
     } catch (err) {
       console.error('Error checking window status:', err);
+      setWindowActive(false);
     }
   };
 
