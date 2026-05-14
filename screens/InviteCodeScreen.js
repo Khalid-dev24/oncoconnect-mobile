@@ -102,6 +102,9 @@ export default function InviteCodeScreen({ navigation, route }) {
         const patientId = response.data.patient.id;
         const token = response.data.token;
         
+        // CRITICAL: Clear any old consultation window data from previous user
+        await AsyncStorage.removeItem('consultation_window');
+        
         // Store the auth token for future API requests
         if (token) {
           await AsyncStorage.setItem('auth_token', token);

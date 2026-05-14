@@ -83,6 +83,9 @@ export default function OnboardingScreen({ navigation }) {
 
         // User exists - log them in
         if (response.data.patient && response.data.token) {
+          // CRITICAL: Clear old consultation window data from previous user
+          await AsyncStorage.removeItem('consultation_window');
+          
           await AsyncStorage.setItem('auth_token', response.data.token);
           await AsyncStorage.setItem('patient_id', response.data.patient.id);
           await AsyncStorage.setItem('patient_name', response.data.patient.name);
@@ -98,7 +101,10 @@ export default function OnboardingScreen({ navigation }) {
         if (loginErr.response?.status === 404) {
           console.log('User not found - this is a new user, proceeding to registration');
           
-          // New user - proceed to invite code screen
+          // New user - clear any old consultation window data
+          await AsyncStorage.removeItem('consultation_window');
+          
+          // Proceed to invite code screen
           await AsyncStorage.setItem('patient_phone', phone);
           await AsyncStorage.setItem('is_authenticated', 'false');
           
